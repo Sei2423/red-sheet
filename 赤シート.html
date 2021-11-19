@@ -1,0 +1,204 @@
+<div class="drag-and-drop" style="width: 200px;height: 200px;border: 1px solid #999;resize: both;overflow: hidden;"><canvas id="canvas"></canvas></div>
+<p>■画像ファイルを選択してください。<br>■シートはctrlで大きさを変えられます<br>■ドラッグアンドドロップで動かせます<br>
+<input type="file" accept='image/*' multiple="multiple" onchange="loadImage(this);"></p>
+<input type="range" id="inputSlideBar" min="100" max="1500" step="0.1" style="width:500px;">画像の大きさ<br>
+<input type="range" id="a" min="0" max="1" step="0.001" style="width:500px;">濃さ<br>
+<input type="color" id="color">
+<script type="text/javascript">
+var div=document.getElementsByClassName('drag-and-drop')[0]
+function do1(){
+function hex2rgb (hex){
+  if(/^#/.test(hex)){
+    hex = hex.slice(1);
+  }
+  if(hex.length !== 3 && hex.length !== 6 ){
+    throw new Error("Invaild hex String");
+  }
+  
+  var digit = hex.split("");
+  
+  if(digit.length === 3){
+    digit = [ digit[0],digit[0],digit[1],digit[1],digit[2],digit[2] ]
+  }
+  var r = parseInt( [digit[0],digit[1] ].join(""), 16 );
+  var g = parseInt( [digit[4],digit[5] ].join(""), 16 );
+  var b = parseInt( [digit[2],digit[3] ].join(""), 16 );
+  return [r,g,b];
+}
+
+var color=document.getElementById('color');
+var canvas = document.getElementById('canvas');
+var canvas_width=parseInt(div.style.width);
+var canvas_height=parseInt(div.style.height);
+canvas.width=canvas_width;
+canvas.height=canvas_height;
+var rgb=hex2rgb(color.value);
+var red=rgb[0];
+var blue=rgb[1];
+var green=rgb[2];
+var rgba="rgba("+red+","+green+","+blue+","+document.getElementById('a').value+")";
+    /*
+        角丸四角を描く
+        x,yは座標
+        width,heightは幅と高さ
+        radiusは角丸の半径
+    */
+    function createRoundRect(context, x, y, width, height, radius)
+    {   
+        ctx.clearRect(0, 0, canvas_width, canvas_height);
+        // 左上移動
+        ctx.moveTo(x + radius, y);
+        // 右上に繋がる線
+        ctx.lineTo(x + width - radius, y);
+        // 弧
+        ctx.arcTo(x + width, y, x + width, y + radius, radius);
+        // 右下に繋がる線
+        ctx.lineTo(x + width, y + height - radius);
+        // 弧
+        ctx.arcTo(x + width, y + height, x + width - radius 
+            , y + height, radius);
+        // 左下に繋がる線
+        ctx.lineTo(x + radius, y + height); 
+        // 弧
+        ctx.arcTo(x, y + height, x, y + height - radius, radius);
+        // 右上に繋がる線
+        ctx.lineTo(x, y + radius);
+        // 弧
+        ctx.arcTo(x, y, x + radius, y, radius);
+        ctx.closePath();
+    }
+    // canvas要素取得
+    var canvas = document.getElementById('canvas');
+    // CanvasRenderingContext2D取得
+    var ctx = canvas.getContext('2d');
+    ctx.lineWidth = 3;
+    createRoundRect(ctx, 0, 0, canvas_width, canvas_height, 20);
+    ctx.fillStyle = rgba;
+    ctx.fill();
+}
+setInterval(do1,10);
+</script>
+
+<script>
+function inputChange(){
+ var pre=document.getElementsByClassName('pre');
+ for(let j=0;j<pre.length;j++){pre[j].style.width=this.value+'px';}
+}
+let bar = document.getElementById('inputSlideBar');
+bar.addEventListener('input', inputChange);
+</script>
+<p id="preview"></p>
+<style>
+#preview img {
+	width:100px;
+	border:1px solid #cccccc;
+}
+</style>
+<script>
+function loadImage(obj)
+{
+	for (i = 0; i < obj.files.length; i++) {
+		var fileReader = new FileReader();
+		fileReader.onload = (function (e) {
+			document.getElementById('preview').innerHTML += '<img class="pre" src="' + e.target.result + '">';
+		});
+		fileReader.readAsDataURL(obj.files[i]);
+	}
+}
+</script>
+<style>
+</style>
+<script>
+(function(){
+
+    //要素の取得
+    var elements = document.getElementsByClassName("drag-and-drop");
+
+    //要素内のクリックされた位置を取得するグローバル（のような）変数
+    var x;
+    var y;
+
+    //マウスが要素内で押されたとき、又はタッチされたとき発火
+    for(var i = 0; i < elements.length; i++) {
+        elements[i].addEventListener("mousedown", mdown, false);
+        elements[i].addEventListener("touchstart", mdown, false);
+    }
+
+    //マウスが押された際の関数
+    function mdown(e) {
+if (!e.ctrlKey){
+        //クラス名に .drag を追加
+        this.classList.add("drag");
+
+        //タッチデイベントとマウスのイベントの差異を吸収
+        if(e.type === "mousedown") {
+            var event = e;
+        } else {
+            var event = e.changedTouches[0];
+        }
+
+        //要素内の相対座標を取得
+        x = event.pageX - this.offsetLeft;
+        y = event.pageY - this.offsetTop;
+
+        //ムーブイベントにコールバック
+        document.body.addEventListener("mousemove", mmove, false);
+        document.body.addEventListener("touchmove", mmove, false);
+}
+    }
+
+    //マウスカーソルが動いたときに発火
+    function mmove(e) {
+
+        //ドラッグしている要素を取得
+        var drag = document.getElementsByClassName("drag")[0];
+
+        //同様にマウスとタッチの差異を吸収
+        if(e.type === "mousemove") {
+            var event = e;
+        } else {
+            var event = e.changedTouches[0];
+        }
+
+        //フリックしたときに画面を動かさないようにデフォルト動作を抑制
+        e.preventDefault();
+
+        //マウスが動いた場所に要素を動かす
+        drag.style.top = event.pageY - y + "px";
+        drag.style.left = event.pageX - x + "px";
+
+        //マウスボタンが離されたとき、またはカーソルが外れたとき発火
+        drag.addEventListener("mouseup", mup, false);
+        document.body.addEventListener("mouseleave", mup, false);
+        drag.addEventListener("touchend", mup, false);
+        document.body.addEventListener("touchleave", mup, false);
+
+    }
+
+    //マウスボタンが上がったら発火
+    function mup(e) {
+        var drag = document.getElementsByClassName("drag")[0];
+
+        //ムーブベントハンドラの消去
+        document.body.removeEventListener("mousemove", mmove, false);
+        drag.removeEventListener("mouseup", mup, false);
+        document.body.removeEventListener("touchmove", mmove, false);
+        drag.removeEventListener("touchend", mup, false);
+
+        //クラス名 .drag も消す
+        drag.classList.remove("drag");
+    }
+
+})()
+</script>
+<style>
+.drag-and-drop {
+    cursor: move;
+    position: absolute;
+    z-index: 1000;
+}
+
+.drag {
+    z-index: 1001;
+}
+</style>
